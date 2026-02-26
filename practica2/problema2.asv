@@ -59,13 +59,8 @@ du=(u-up);
 dv=(v-vp);
 d=sqrt(du.^2+dv.^2);
 dm = mean(d);
-pl = 1:77;
-plot(pl,d,'b');
 
-show_err_malla(du,dv);
-
-H = get_proy(X,Y,u,v);
-vuelca_matriz(H)
+plot()
 
 %%  FUNCIONES AUXILIARES A COMPLETAR   %%
 
