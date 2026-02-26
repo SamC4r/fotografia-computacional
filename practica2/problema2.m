@@ -1,3 +1,4 @@
+
 im=imread('malla.jpg'); 
 [N,M,~]=size(im); 
 
@@ -8,53 +9,71 @@ aux=rgb2gray(im); G=fspecial('gaussian',15,5); aux=imfilter(aux,G);
 figure(1); imshow(im)
 lista={'superior izda ','superior drcha','inferior drcha','inferior izda '};
 u=zeros(1,4); v=zeros(1,4);  % vectores para guardar coordenadas esquinas   
+
 for k=1:4  
-  fprintf('Pincha esquina %s:',lista{k});  
-  [x,y]=ginput(1); 
+  fprintf('Pincha esquina %s:',lista{k});
   
-  fprintf('x=%6.1f,y=%6.1f\n',x,y);
+  [x,y]=ginput(1); 
+  [X,Y] = refinar(x,y,im);
+
+  u(k) = X;
+  v(k) = Y;
+
+  fprintf('x=%6.1f,y=%6.1f\t',x,y);
+  fprintf('Mejoradas: x=%6.1f,y=%6.1f\n',u(k),v(k));
+  
   hold on; 
-   plot(x,y,'ro','MarkerFaceCol','r','MarkerSize',3); 
+  plot(x,y,'ro','MarkerFaceCol','r','MarkerSize',3); 
+  plot(u(k),v(k),'go','MarkerFaceCol','g','MarkerSize',3); 
   hold off
    
 end
 
 %% Continuar aquí el script con el resto de los apartados del script
 
+X = [-100, 100, 100, -100];
+Y = [ 60,  60, -60, -60 ];
 
+H = get_proy(X,Y,u,v);
+vuelca_matriz(H)
 
 
 
 %%  FUNCIONES AUXILIARES A COMPLETAR   %%
 
 function [x,y]=refinar(x,y,aux)
-R=50; % Definición del tamaño de la zona a explorar
-rr=(-R:R); cx=ones(length(rr),1)*rr; cy=cx';
-xc = round(x);
-yc = round(y);
+    R=50; % Definición del tamaño de la zona a explorar
+    rr=(-R:R); 
+    cx=ones(length(rr),1)*rr; 
+    cy=cx';
 
-% Verificar que la ventana esté completamente dentro de la imagen
-[h, w] = size(aux);
-yc = max(R+1, min(yc, h - R));
-xc = max(R+1, min(xc, w - R));
+    xc = round(x);
+    yc = round(y);
+    
+    % Verificar que la ventana esté completamente dentro de la imagen
+    %[h, w] = size(aux);
+    %yc = max(R+1, min(yc, h - R));
+    %xc = max(R+1, min(xc, w - R));
+    
+    % Extraer subimagen de tamaño (2R+1)x(2R+1)
+    s = aux(yc-R:yc+R, xc-R:xc+R);
+    s = double(s);
+    
+    % Calcular pesos: se da más peso a los píxeles más oscuros (cerca del mínimo)
+    m = min(s(:));
+    d = abs(s - m);
+    w = exp(-d);          % peso = e^{-d} )
+    w = w / sum(w(:));    % normalizar
 
-% Extraer subimagen de tamaño (2R+1)x(2R+1)
-s = aux(yc-R:yc+R, xc-R:xc+R);
-s = double(s);
+    % Desplazamiento ponderado
+    dx = sum(sum(w .* cx));
+    dy = sum(sum(w .* cy));
 
-% Calcular pesos: se da más peso a los píxeles más oscuros (cerca del mínimo)
-m = min(s(:));
-d = abs(s - m);
-w = exp(-d);          % peso = e^{-d} )
-w = w / sum(w(:));    % normalizar
-
-% Desplazamiento ponderado
-dx = sum(sum(w .* cx));
-dy = sum(sum(w .* cy));
-
-% Nueva posición refinada
-x = xc + dx;
-y = yc + dy;
+    
+    % Nueva posición refinada
+    x = xc + dx;
+    y = yc + dy;
+   
 end
 
 function [f,R,X0]=get_data_from_H(H)
@@ -108,5 +127,3 @@ hold off
 xlim([0 12]); ylim([0 8])
 
 end
-
-
