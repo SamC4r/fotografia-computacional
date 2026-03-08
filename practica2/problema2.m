@@ -1,5 +1,5 @@
 
-im=imread('malla.jpg'); 
+im=imread('malla_movil.jpeg'); 
 [N,M,~]=size(im); 
 
 % Calcular imagen auxiliar aux a partir de im 
@@ -13,7 +13,7 @@ u=zeros(1,4); v=zeros(1,4);  % vectores para guardar coordenadas esquinas
 for k=1:4  
   fprintf('Pincha esquina %s:',lista{k});
   
-  [x,y]=ginput(1); 
+  [x,y]= ginput(1); 
   [X,Y] = refinar(x,y,aux);
 
   u(k) = X;
@@ -30,22 +30,19 @@ for k=1:4
 end
 
 %% Continuar aquí el script con el resto de los apartados del script
+ X = [80, 100, 100, 80];
+ Y = [ 80,  60, 40, 40 ];
 
-X = [80, 100, 100, 80];
-Y = [ 60,  60, 40, 40 ];
-
-H = get_proy(X,Y,u,v);
-vuelca_matriz(H)
-
-load malla_XY.mat
-load H1.mat
-
-XY = [X;Y;ones(1,77)]; 
-mult =  H*XY;
-up = mult(1,:)./mult(3,:);
-vp = mult(2,:)./mult(3,:);
-
-u=zeros(1,77); v=zeros(1,77);
+ H = get_proy(X,Y,u,v);
+ vuelca_matriz(H)
+ 
+ load malla_XY.mat
+ 
+ XY = [X;Y;ones(1,77)]; 
+ mult =  H*XY;
+ up = mult(1,:)./mult(3,:);
+ vp = mult(2,:)./mult(3,:);
+ u=zeros(1,77); v=zeros(1,77);
 
  for k=1:77  
   [x2, y2] = refinar(up(1,k),vp(1,k),aux);
@@ -53,21 +50,27 @@ u=zeros(1,77); v=zeros(1,77);
   u(k) = x2;
   v(k) = y2;
    
-end
+ end
 
-du=(u-up); 
-dv=(v-vp);
-d=sqrt(du.^2+dv.^2);
-dm = mean(d);
-pl = 1:77;
-plot(pl,d,'b');
+ du=(u-up); 
+ dv=(v-vp);
+ d=sqrt(du.^2+dv.^2);
+ dm = mean(d);
+ pl = 1:77;
+ plot(pl,d,'b');
 
-show_err_malla(du,dv);
+ show_err_malla(du,dv);
 
-H = get_proy(X,Y,u,v);
-vuelca_matriz(H)
+ H = get_proy(X,Y,u,v);
+ vuelca_matriz(H)
+ 
+ [f,R,X0] = get_data_from_H(H);
+ 
 
-%%  FUNCIONES AUXILIARES A COMPLETAR   %%
+ show_err_malla(u,v);
+
+
+ %%  FUNCIONES AUXILIARES A COMPLETAR   %%
 
 function [x,y]=refinar(x,y,aux)
     R=50; % Definición del tamaño de la zona a explorar
@@ -105,9 +108,34 @@ function [x,y]=refinar(x,y,aux)
 end
 
 function [f,R,X0]=get_data_from_H(H)
-  % Definir valores de u0, v0
+    im = imread('malla_movil.jpeg');
+    [N,M,~] = size(im);
+    u0 = M/2;
+    v0 = N/2;
 
- 
+    h1 = H(:,1);
+    h2 = H(:,2);
+    B = [1 0 -u0; 0 1 -v0; -u0 -v0 u0^2+v0^2];
+    f = sqrt( - (h1' * B * h2) / (H(3,1)*H(3,2)*H(3,3) ) );
+
+    K = [f 0 u0; 0 f v0; 0 0 1];
+    Q = K \ H;
+
+    r1 = Q(:,1);
+    r2 = Q(:,2);
+    t = Q(:,3);
+
+    n1 = norm(r1);
+    n2 = norm(r2);
+    lambda = sqrt(n1*n2);
+    r1 = r1 / n1;
+    r2 = r2 / n2;
+    t = t / lambda;
+
+    r3 = cross(r1, r2);
+    R = [r1 r2 r3];
+
+    X0 = -R' * t;
 end
 
 function out=convertir_Rw(in)
@@ -126,19 +154,43 @@ end
 
 end
 
-function err=error_uv(P,X,Y,u,v)
+function err = error_uv(P, X, Y, u, v)
+    w = P(1:3);
+    X0 = P(4:6);
+    f = P(7);
 
+    R = convertir_Rw(w);
+    t = -R * X0;
+    Q = [R(:,1) R(:,2) t];
+
+    N = length(X);
+    XY = [X(:)'; Y(:)'; ones(1,N)];
+    XYZcam = Q * XY;
+
+    xn = XYZcam(1,:) ./ XYZcam(3,:);
+    yn = XYZcam(2,:) ./ XYZcam(3,:);
+
+    im = imread('malla.jpg');
+    [h, wimg] = size(im);
+    u0 = wimg/2;
+    v0 = h/2;
+
+    up = u0 + f * xn;
+    vp = v0 + f * yn;
+
+    du = u(:) - up(:);
+    dv = v(:) - vp(:);
+    err = [du; dv]';
 end
-
 %% FUNCIONES AUXILIARES PARA USAR (NO MODIFICAR)
 
 % Vuelca valores de una matriz 3x3
 function vuelca_matriz(H)
   fprintf('%7.3f %7.3f %8.2f\n',H');
 end
+% % Pintar malla + errores en los nodos como flechas
 
-% Pintar malla + errores en los nodos como flechas
-function show_err_malla(du,dv,S)    
+function show_err_malla(du,dv,S)
 if nargin==2, S=1; end
 
 s=sqrt(du.^2+dv.^2); s=mean(s);
