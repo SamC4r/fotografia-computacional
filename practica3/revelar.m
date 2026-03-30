@@ -46,7 +46,7 @@ sG = G - 0.13*R - 0.43 * B;
 sB = B + 0.01*R - 0.21 * G;
 
 im = cat(3,sR,sG,sB);
-%imshow(im_2);
+%imshow(im);
 
 
 max_val = max(im(:));
@@ -83,7 +83,7 @@ fprintf('Factores de corrección: Rojo: %.4f, Verde: %.4f Azul: %.4f \n', c1, c2
 
 im_wb = im;
 im_wb(:,:,1) = im_wb(:,:,1) * c1;
-im_wb(:,:,3) = im_wb(:,:,3) * c2;
+im_wb(:,:,3) = im_wb(:,:,3) * c3;
 im_wb = min(max(im_wb, 0), 1);
 
 figure;
@@ -91,8 +91,6 @@ imshow(im_wb);
 set(gcf, 'Name', 'White Balance');
 
 sat_color = corregir_color(im_wb, 1.03, 0.03) * 100;
-
-
 
 % 3.4) Algoritmo alternativo WB
 
@@ -154,17 +152,20 @@ sat_color_2 = corregir_color(im_wb2_3, 1.02, 0.03) * 100;
 
 sat_color_3 = corregir_color_guardar(im_wb2_3, 1.02, 0.03) * 100;
 
-im_90 = imread('foto90.jpg');  
-tam_90 = size(im_90);
+info = dir('foto95.jpg');
+tam_95 = info.bytes;
 
-im_95 = imread('foto95.jpg');  
-tam_95 = size(im_95);
+info = dir('foto98.jpg');
+tam_98 = info.bytes;
 
-im_98 = imread('foto98.jpg');  
-tam_98 = size(im_98);
+info = dir('foto90.jpg');
+tam_90 = info.bytes;
+
 
 im_sc = imread('foto.tif');  
-tam_sc = size(im_sc);
+
+[n, m, ~] = size(im_sc);
+tam_sc = n * m * 3;
 
 fc_90 = tam_sc/tam_90;
 fc_95 = tam_sc/tam_95;
@@ -190,6 +191,11 @@ function saturados = corregir(im,F,del)
     %menores a 0
     l0 = sum(im(:) < 0);
 
+    [N, M, ~] = size(im);
+    total = N * M;
+    sat_alto = (sum(g1) / total) * 100;
+    sat_bajo = (sum(l0) / total) * 100;
+
     im = min(max(0,im),1);
 
     saturados = (g1 + l0) / numel(im);
@@ -210,11 +216,11 @@ function saturados = corregir_color(im, F, delta)
 
     im = F * im - delta;
     altoCon = any(im > 1, 3);
-    bajoCont = any(im < 0, 3);
+    bajoCon = any(im < 0, 3);
 
     im = min(max(im, 0), 1);
 
-    saturados = (sum(altoCon(:)) + sum(bajoCont(:))) / numel(im(:,:,1));
+    saturados = (sum(altoCon(:)) + sum(bajoCon(:))) / numel(im(:,:,1));
 
     figure;
     %histogram(im(:)); xlim([-0.05 1.05]);
@@ -244,9 +250,7 @@ function saturados = corregir_color_guardar(im, F, delta)
     imshow(im);
     set(gcf,'Name','Imagen Correccion Brillo-Contraste');
 
-    im = im.*255;
-
-    im = uint8(im);
+    im = uint8(im*255);
 
     imwrite(im,'foto.tif')
 
