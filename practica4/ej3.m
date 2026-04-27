@@ -1,6 +1,102 @@
 clc; close all;
 
-im=imread('img.jpg');
+%im=imread('img.jpg');
+
+
+
+%im=im2double(im);
+%p=lap_pir(im,5);
+
+%ver_lap(p);
+
+
+%xd = inv_lap(p);
+%imshow(xd);
+
+%if = xd - im;
+%mx = max(dif(:))
+%mi = min(dif(:))
+
+
+cara = imread('cara_bonita_2.jpeg');
+cara_2 = imread('cara_bonita_1.jpeg');
+cara=im2double(cara);
+cara_2 = im2double(cara_2);
+%imshow(cara);
+%imshow(cara_2);
+ry=(985:1030); 
+rx=(273:648); 
+Yorg=900; 
+Xorg=461; 
+z1=cara(Yorg+ry,Xorg+rx,:);
+Xdest=462;
+Ydest=900;
+z0=cara(Ydest+ry,Xdest+rx,:);
+
+imshow(z0);
+%cara(Ydest+ry,Xdest+rx,:)=z1;
+%imshow(cara);
+
+%m=crea_mask(size(z0),[90 180]);
+
+%Z = m.*z1 + (1-m).*z0;
+
+%cara(Ydest+ry,Xdest+rx,:)=Z;
+%imshow(cara);
+
+%p0=lap_pir(z0,5);
+%p1=lap_pir(z1,5);
+
+%mix=cell(1,5);
+
+%for k=1:5
+ %   mix{k} = m.*p1{k} + (1-m).*p0{k};
+  %  G=fspecial('gauss',7,2.5); 
+   % m=imfilter(m,G);
+    %m=m(1:2:end,1:2:end);
+%end
+
+%xd = inv_lap(mix);
+%cara(Ydest+ry,Xdest+rx,:)=xd;
+%imshow(cara);
+%whos xd;
+
+
+
+
+function im=inv_lap(p)
+    N = length(p);
+    im = p{N};
+    for k=N-1:-1:1
+        im = amplia(im);
+        %if k == 2
+        %    continue
+        %end
+        im = im + p{k};
+    end
+end
+
+function ver_lap(p)
+
+figure('Name','Piramide Laplaciana'); 
+
+L=length(p);  [N,M,Nc]=size(p{1});
+
+res=zeros(N,M,Nc);
+
+dx=0; dy=0;
+for k=1:L
+  nivel=p{k};
+  if k<L, nivel=0.5+2*nivel; end
+  nivel([1 2 N-1 N],:,1:2)=0; nivel(:,[1 2 M-1 M],1:2)=0;
+  nivel([1 2 N-1 N],:,3)=1; nivel(:,[1 2 M-1 M],3)=1;
+  res((1:N)+dy,(1:M)+dx,:)=nivel;
+  N=N/2; M=M/2;
+end
+
+imshow(res);
+
+end
 
 function H=raised_cos(N)
     L=(N - 1) / 2;
@@ -11,14 +107,14 @@ function H=raised_cos(N)
     h = h ./ sum(h);
     h
     H = h' * h;
-end;
+end
 
 function im=reduce(im)
     H3 = raised_cos(3);
     im=imfilter(im,H3);
     C=im(1:2:end,1:2:end,:);
     im=C;
-end;
+end
 
 
 function im2=amplia(im)
@@ -62,102 +158,6 @@ function p=lap_pir(im,N)
     end
     p{N} = im;
 end
-
-im=im2double(im);
-p=lap_pir(im,5);
-
-%ver_lap(p);
-
-
-function im=inv_lap(p)
-    N = length(p);
-    im = p{N};
-    for k=N-1:-1:1
-        im = amplia(im);
-        %if k == 2
-        %    continue
-        %end
-        im = im + p{k};
-    end
-end
-
-xd = inv_lap(p);
-%imshow(xd);
-
-dif = xd - im;
-mx = max(dif(:))
-mi = min(dif(:))
-
-
-
-
-cara=imread('face_img.jpg');
-cara=im2double(cara);
-imshow(cara);
-ry=(-111:112); 
-rx=(-191:192); 
-Yorg=466; 
-Xorg=692; 
-z1=cara(Yorg+ry,Xorg+rx,:);
-Xdest=452;
-Ydest=201;
-z0=cara(Ydest+ry,Xdest+rx,:);
-
-%imshow(z0);
-%cara(Ydest+ry,Xdest+rx,:)=z1;
-%imshow(cara);
-
-m=crea_mask(size(z0),[90 180]);
-
-Z = m.*z1 + (1-m).*z0;
-
-cara(Ydest+ry,Xdest+rx,:)=Z;
-%imshow(cara);
-
-p0=lap_pir(z0,5);
-p1=lap_pir(z1,5);
-
-mix=cell(1,5);
-
-for k=1:5
-    mix{k} = m.*p1{k} + (1-m).*p0{k};
-    G=fspecial('gauss',7,2.5); 
-    m=imfilter(m,G);
-    m=m(1:2:end,1:2:end);
-end
-
-xd = inv_lap(mix);
-cara(Ydest+ry,Xdest+rx,:)=xd;
-imshow(cara);
-whos xd;
-
-
-
-
-
-
-function ver_lap(p)
-
-figure('Name','Piramide Laplaciana'); 
-
-L=length(p);  [N,M,Nc]=size(p{1});
-
-res=zeros(N,M,Nc);
-
-dx=0; dy=0;
-for k=1:L
-  nivel=p{k};
-  if k<L, nivel=0.5+2*nivel; end
-  nivel([1 2 N-1 N],:,1:2)=0; nivel(:,[1 2 M-1 M],1:2)=0;
-  nivel([1 2 N-1 N],:,3)=1; nivel(:,[1 2 M-1 M],3)=1;
-  res((1:N)+dy,(1:M)+dx,:)=nivel;
-  N=N/2; M=M/2;
-end
-
-imshow(res);
-
-end
-
 
 function mask=crea_mask(dims,w)
 
