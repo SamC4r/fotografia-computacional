@@ -33,7 +33,7 @@ error_max = max(sqrt(diff_u.^2 + diff_v.^2));
 
 ip_proy = get_proy(u_2,v_2,x_2,y_2);
 show_mat(ip_proy);
-show_mat(P_proy);
+show_mat(inv(P_proy));
 
 I_proy = P_proy * ip_proy;
 show_mat(I_proy)
